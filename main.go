@@ -1,9 +1,16 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
+	"net"
+	"strconv"
+	"strings"
 
+	"github.com/amazingtapioca17/mgmt/mgmtconn"
 	"github.com/amazingtapioca17/mgmt/modules"
+
+	customrib "github.com/amazingtapioca17/mgmt/table"
 	"github.com/named-data/YaNFD/ndn"
 	"github.com/named-data/YaNFD/ndn/lpv2"
 	"github.com/named-data/YaNFD/ndn/mgmt"
@@ -16,23 +23,58 @@ import (
 // 	nonLocalPrefix *ndn.Name
 // }
 
-// func MakeMgmtThread() *Thread {
-// 	m := new(Thread)
-// 	var err error
-// 	m.localPrefix, err = ndn.NameFromString("/localhost/nfd")
-// 	if err != nil {
-// 		core.LogFatal(m, "Unable to create name for management prefix: ", err)
-// 	}
-// 	m.nonLocalPrefix, err = ndn.NameFromString("/localhop/nfd")
-// 	if err != nil {
-// 		core.LogFatal(m, "Unable to create name for management prefix: ", err)
-// 	}
-// 	return m
-// }
-
+//	func MakeMgmtThread() *Thread {
+//		m := new(Thread)
+//		var err error
+//		m.localPrefix, err = ndn.NameFromString("/localhost/nfd")
+//		if err != nil {
+//			core.LogFatal(m, "Unable to create name for management prefix: ", err)
+//		}
+//		m.nonLocalPrefix, err = ndn.NameFromString("/localhop/nfd")
+//		if err != nil {
+//			core.LogFatal(m, "Unable to create name for management prefix: ", err)
+//		}
+//		return m
+//	}
 var partialMessageStore map[uint64][][]byte
 
+func mgmtConn() {
+	// listen to incoming udp packets
+	fmt.Println("listening for cleanup")
+	udpServer, err := net.ListenPacket("udp", ":2000")
+	if err != nil {
+		return
+	}
+	defer udpServer.Close()
+
+	for {
+		buf := make([]byte, 1024)
+		_, addr, err := udpServer.ReadFrom(buf)
+		if err != nil {
+			continue
+		}
+		go response(udpServer, addr, buf)
+	}
+}
+func response(udpServer net.PacketConn, addr net.Addr, buf []byte) {
+	buf = bytes.Trim(buf, "\x00")
+	fibcommand := string(buf)
+	command := strings.Split(fibcommand, ",")
+	switch command[0] {
+	case "clean":
+		faceID, _ := strconv.Atoi(command[1])
+		fmt.Println("cleaned", faceID)
+		customrib.Rib.CleanUpFace(uint64(faceID))
+	default:
+	}
+}
 func main() {
+	//go mgmtConn()
+	// mgmtconn.Conn.Port = ":1080"
+	// mgmtconn.Conn.Socket = "/tmp/fib.sock"
+	mgmtconn.Conn.MakeMgmtConn()
+	mgmtconn.Conn.Table = &customrib.Rib
+	go mgmtconn.Conn.RunRead()
 	manager := modules.MakeMgmtThread()
 	manager.Run()
 }

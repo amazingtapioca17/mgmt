@@ -27,6 +27,64 @@ type Thread struct {
 	modules        map[string]Module
 }
 
+func (m *Thread) ClearNextHop(name *ndn.Name) string {
+	udpServer, err := net.ResolveUDPAddr("udp", m.port)
+
+	if err != nil {
+		fmt.Println("ResolveUDPAddr failed:", err.Error())
+	}
+
+	conn, err := net.DialUDP("udp", nil, udpServer)
+	if err != nil {
+		fmt.Println("Listen failed:", err.Error())
+	}
+
+	//close the connection
+	defer conn.Close()
+	msg := fmt.Sprintf("clear,%s", name)
+	_, err = conn.Write([]byte(msg))
+	if err != nil {
+		fmt.Println("Write data failed:", err.Error())
+	}
+
+	// buffer to get data
+	received := make([]byte, 1024)
+	_, err = conn.Read(received)
+	if err != nil {
+		fmt.Println("Read data failed:", err.Error())
+	}
+	return string(received)
+}
+
+func (m *Thread) RemoveNextHop(name *ndn.Name, faceID uint64) string {
+	udpServer, err := net.ResolveUDPAddr("udp", m.port)
+
+	if err != nil {
+		fmt.Println("ResolveUDPAddr failed:", err.Error())
+	}
+
+	conn, err := net.DialUDP("udp", nil, udpServer)
+	if err != nil {
+		fmt.Println("Listen failed:", err.Error())
+	}
+
+	//close the connection
+	defer conn.Close()
+	msg := fmt.Sprintf("insert,%s,%d", name, faceID)
+	_, err = conn.Write([]byte(msg))
+	if err != nil {
+		fmt.Println("Write data failed:", err.Error())
+	}
+
+	// buffer to get data
+	received := make([]byte, 1024)
+	_, err = conn.Read(received)
+	if err != nil {
+		fmt.Println("Read data failed:", err.Error())
+	}
+	return string(received)
+}
+
 func (m *Thread) InsertNextHop(name *ndn.Name, faceID uint64, cost uint64) string {
 	udpServer, err := net.ResolveUDPAddr("udp", m.port)
 
@@ -41,7 +99,7 @@ func (m *Thread) InsertNextHop(name *ndn.Name, faceID uint64, cost uint64) strin
 
 	//close the connection
 	defer conn.Close()
-	msg := fmt.Sprintf("register,%s,%d,%d", name, faceID, cost)
+	msg := fmt.Sprintf("insert,%s,%d,%d", name, faceID, cost)
 	_, err = conn.Write([]byte(msg))
 	if err != nil {
 		fmt.Println("Write data failed:", err.Error())

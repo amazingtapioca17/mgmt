@@ -9,8 +9,10 @@ package table
 
 import (
 	"container/list"
+	"fmt"
 	"time"
 
+	"github.com/amazingtapioca17/mgmt/mgmtconn"
 	"github.com/named-data/YaNFD/ndn"
 )
 
@@ -112,7 +114,7 @@ func (r *RibEntry) pruneIfEmpty() {
 
 func (r *RibEntry) updateNexthops() {
 	//FibStrategyTable.ClearNextHops(r.Name)
-
+	mgmtconn.Conn.ClearNextHops(r.Name)
 	// Find minimum cost route per nexthop
 	minCostRoutes := make(map[uint64]uint64) // FaceID -> Cost
 	for _, route := range r.routes {
@@ -123,9 +125,10 @@ func (r *RibEntry) updateNexthops() {
 	}
 
 	//Add "flattened" set of nexthops
-	// for nexthop, cost := range minCostRoutes {
-	// 	//FibStrategyTable.InsertNextHop(r.Name, nexthop, cost)
-	// }
+	for nexthop, cost := range minCostRoutes {
+		fmt.Println(r.Name, nexthop, cost)
+		mgmtconn.Conn.InsertNextHop(r.Name, nexthop, cost)
+	}
 }
 
 // AddRoute adds or updates a RIB entry for the specified prefix.
@@ -206,12 +209,12 @@ func (r *RibEntry) CleanUpFace(faceId uint64) {
 	for child := range r.children {
 		child.CleanUpFace(faceId)
 	}
-
 	// Remove next hop
 	if r.Name == nil {
 		return
 	}
 	for i, existingNexthop := range r.routes {
+		fmt.Println(existingNexthop.FaceID, faceId)
 		if existingNexthop.FaceID == faceId {
 			if i < len(r.routes)-1 {
 				copy(r.routes[i:], r.routes[i+1:])

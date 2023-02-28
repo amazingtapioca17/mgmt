@@ -8,10 +8,10 @@
 package modules
 
 import (
-	"fmt"
 	"strconv"
 	"time"
 
+	customrib "github.com/amazingtapioca17/mgmt/table"
 	"github.com/named-data/YaNFD/core"
 	"github.com/named-data/YaNFD/face"
 	"github.com/named-data/YaNFD/ndn"
@@ -115,8 +115,9 @@ func (r *RIBModule) register(interest *ndn.Interest, pitToken []byte, inFace uin
 	}
 
 	//table.Rib.AddRoute(params.Name, faceID, origin, cost, flags, expirationPeriod)
-	ack := r.manager.InsertNextHop(params.Name, faceID, cost)
-	fmt.Println(ack, "got an ack")
+	customrib.Rib.AddRoute(params.Name, faceID, origin, cost, flags, expirationPeriod)
+	// ack := r.manager.InsertNextHop(params.Name, faceID, cost)
+	// fmt.Println(ack, "got an ack")
 	if expirationPeriod != nil {
 		core.LogInfo(r, "Created route for Prefix=", params.Name, ", FaceID=", faceID, ", Origin=", origin, ", Cost=", cost, ", Flags=0x", strconv.FormatUint(flags, 16), ", ExpirationPeriod=", expirationPeriod)
 	} else {
