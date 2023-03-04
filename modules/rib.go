@@ -59,6 +59,7 @@ func (r *RIBModule) handleIncomingInterest(interest *ndn.Interest, pitToken []by
 }
 
 func (r *RIBModule) register(interest *ndn.Interest, pitToken []byte, inFace uint64) {
+	//keep in mind we are importing yanfd table here for default values, should migrate
 	var response *mgmt.ControlResponse
 
 	if interest.Name().Size() < r.manager.prefixLength()+3 {
@@ -183,7 +184,7 @@ func (r *RIBModule) unregister(interest *ndn.Interest, pitToken []byte, inFace u
 	}
 
 	//table.Rib.RemoveRoute(params.Name, faceID, origin)
-
+	customrib.Rib.RemoveRoute(params.Name, faceID, origin)
 	core.LogInfo(r, "Removed route for Prefix=", params.Name, ", FaceID=", faceID, ", Origin=", origin)
 	responseParams := mgmt.MakeControlParameters()
 	responseParams.Name = params.Name
@@ -246,7 +247,8 @@ func (r *RIBModule) announce(interest *ndn.Interest, pitToken []byte, inFace uin
 		expirationPeriod = time.Until(notAfter)
 	}
 
-	table.Rib.AddRoute(prefix, faceID, origin, cost, 0, &expirationPeriod)
+	customrib.Rib.AddRoute(prefix, faceID, origin, cost, 0, &expirationPeriod)
+	//investigate expiration period
 
 	core.LogInfo(r, "Created route via PrefixAnnouncement for Prefix=", prefix, ", FaceID=", faceID, ", Origin=", origin, ", Cost=", cost, ", Flags=0x0, ExpirationPeriod=", expirationPeriod)
 
@@ -279,7 +281,7 @@ func (r *RIBModule) list(interest *ndn.Interest, pitToken []byte, inFace uint64)
 	}
 
 	// Generate new dataset
-	entries := table.Rib.GetAllEntries()
+	entries := customrib.Rib.GetAllEntries()
 	dataset := make([]byte, 0)
 	for _, entry := range entries {
 		ribEntry := mgmt.MakeRibEntry(entry.Name)

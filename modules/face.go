@@ -113,6 +113,7 @@ func (f *FaceModule) create(interest *ndn.Interest, pitToken []byte, inFace uint
 
 	// Ensure does not conflict with existing face
 	existingFace := face.FaceTable.GetByURI(params.URI)
+	//easier to make face here or in forwarder?
 	if existingFace != nil {
 		core.LogWarn(f, "Cannot create face ", params.URI, ": Conflicts with existing face FaceID=", existingFace.FaceID(), ", RemoteURI=", existingFace.RemoteURI())
 		responseParams := mgmt.MakeControlParameters()

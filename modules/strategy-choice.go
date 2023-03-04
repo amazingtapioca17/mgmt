@@ -210,6 +210,7 @@ func (s *StrategyChoiceModule) list(interest *ndn.Interest, pitToken []byte, inF
 
 	// Generate new dataset
 	// TODO: For thread safety, we should lock the Strategy table from writes until we are done
+	// another area where we have to request forwarder data
 	entries := table.FibStrategyTable.GetAllForwardingStrategies()
 	dataset := make([]byte, 0)
 	strategyChoiceList := mgmt.MakeStrategyChoiceList()

@@ -8,14 +8,10 @@
 package modules
 
 import (
-	"time"
-
+	"github.com/amazingtapioca17/mgmt/mgmtconn"
 	"github.com/named-data/YaNFD/core"
-	"github.com/named-data/YaNFD/dispatch"
-	"github.com/named-data/YaNFD/fw"
 	"github.com/named-data/YaNFD/ndn"
 	"github.com/named-data/YaNFD/ndn/mgmt"
-	"github.com/named-data/YaNFD/table"
 )
 
 // ForwarderStatusModule is the module that provide forwarder status information.
@@ -63,30 +59,7 @@ func (f *ForwarderStatusModule) general(interest *ndn.Interest, pitToken []byte,
 	}
 
 	// Generate new dataset
-	status := mgmt.MakeGeneralStatus()
-	status.NfdVersion = core.Version
-	status.StartTimestamp = uint64(core.StartTimestamp.UnixNano() / 1000 / 1000)
-	status.CurrentTimestamp = uint64(time.Now().UnixNano() / 1000 / 1000)
-	// Don't set NNameTreeEntries because we don't use a NameTree
-	status.NFibEntries = uint64(len(table.FibStrategyTable.GetAllFIBEntries()))
-	for threadID := 0; threadID < fw.NumFwThreads; threadID++ {
-		thread := dispatch.GetFWThread(threadID)
-		status.NPitEntries += uint64(thread.GetNumPitEntries())
-		status.NCsEntries += uint64(thread.GetNumCsEntries())
-		status.NInInterests += thread.(*fw.Thread).NInInterests
-		status.NInData += thread.(*fw.Thread).NInData
-		status.NOutInterests += thread.(*fw.Thread).NOutInterests
-		status.NOutData += thread.(*fw.Thread).NOutData
-		status.NSatisfiedInterests += thread.(*fw.Thread).NSatisfiedInterests
-		status.NUnsatisfiedInterests += thread.(*fw.Thread).NUnsatisfiedInterests
-	}
-
-	wire, err := status.Encode()
-	if err != nil {
-		core.LogError(f, "Cannot encode forwarder status dataset: ", err)
-		return
-	}
-	dataset := wire.Value()
+	dataset := mgmtconn.AcksConn.ForwarderStatus()
 
 	name, _ := ndn.NameFromString(f.manager.localPrefix.String() + "/status/general")
 	segments := mgmt.MakeStatusDataset(name, f.nextGeneralDatasetVersion, dataset)

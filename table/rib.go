@@ -9,7 +9,6 @@ package table
 
 import (
 	"container/list"
-	"fmt"
 	"time"
 
 	"github.com/amazingtapioca17/mgmt/mgmtconn"
@@ -126,7 +125,7 @@ func (r *RibEntry) updateNexthops() {
 
 	//Add "flattened" set of nexthops
 	for nexthop, cost := range minCostRoutes {
-		fmt.Println(r.Name, nexthop, cost)
+		//fmt.Println(r.Name, nexthop, cost)
 		mgmtconn.Conn.InsertNextHop(r.Name, nexthop, cost)
 	}
 }
@@ -214,7 +213,7 @@ func (r *RibEntry) CleanUpFace(faceId uint64) {
 		return
 	}
 	for i, existingNexthop := range r.routes {
-		fmt.Println(existingNexthop.FaceID, faceId)
+		//fmt.Println(existingNexthop.FaceID, faceId)
 		if existingNexthop.FaceID == faceId {
 			if i < len(r.routes)-1 {
 				copy(r.routes[i:], r.routes[i+1:])

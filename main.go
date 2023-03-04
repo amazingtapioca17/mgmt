@@ -72,9 +72,14 @@ func main() {
 	//go mgmtConn()
 	// mgmtconn.Conn.Port = ":1080"
 	// mgmtconn.Conn.Socket = "/tmp/fib.sock"
-	mgmtconn.Conn.MakeMgmtConn()
+
+	mgmtconn.Conn.MakeMgmtConn("/tmp/mgmt.sock")
 	mgmtconn.Conn.Table = &customrib.Rib
 	go mgmtconn.Conn.RunRead()
+
+	mgmtconn.AcksConn.MakeMgmtConn("/tmp/ackmgmt.sock")
+	mgmtconn.Conn.Table = &customrib.Rib
+
 	manager := modules.MakeMgmtThread()
 	manager.Run()
 }

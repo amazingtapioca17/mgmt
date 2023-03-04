@@ -8,12 +8,12 @@
 package modules
 
 import (
+	"github.com/amazingtapioca17/mgmt/mgmtconn"
 	"github.com/named-data/YaNFD/core"
 	"github.com/named-data/YaNFD/dispatch"
 	"github.com/named-data/YaNFD/fw"
 	"github.com/named-data/YaNFD/ndn"
 	"github.com/named-data/YaNFD/ndn/mgmt"
-	"github.com/named-data/YaNFD/table"
 )
 
 // ContentStoreModule is the module that handles Content Store Management.
@@ -89,7 +89,9 @@ func (c *ContentStoreModule) config(interest *ndn.Interest, pitToken []byte, inF
 
 	if params.Capacity != nil {
 		core.LogInfo(c, "Setting CS capacity to ", *params.Capacity)
-		table.SetCsCapacity(int(*params.Capacity))
+		//easy fix just send mgmtconn.Conn.SetCapacity or smth
+		//table.SetCsCapacity(int(*params.Capacity))
+		mgmtconn.Conn.SetCapacity(int(*params.Capacity))
 	}
 
 	/*if params.Flags != nil {

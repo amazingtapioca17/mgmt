@@ -8,11 +8,10 @@
 package modules
 
 import (
+	"github.com/amazingtapioca17/mgmt/mgmtconn"
 	"github.com/named-data/YaNFD/core"
-	"github.com/named-data/YaNFD/face"
 	"github.com/named-data/YaNFD/ndn"
 	"github.com/named-data/YaNFD/ndn/mgmt"
-	"github.com/named-data/YaNFD/table"
 )
 
 // FIBModule is the module that handles FIB Management.
@@ -82,10 +81,12 @@ func (f *FIBModule) add(interest *ndn.Interest, pitToken []byte, inFace uint64) 
 		return
 	}
 
+	//maybe need to ask forwarder for facetable
+	//need ack comm for this
 	faceID := inFace
 	if params.FaceID != nil && *params.FaceID != 0 {
 		faceID = *params.FaceID
-		if face.FaceTable.Get(faceID) == nil {
+		if mgmtconn.AcksConn.GetFaceId(faceID) {
 			response = mgmt.MakeControlResponse(410, "Face does not exist", nil)
 			f.manager.sendResponse(response, interest, pitToken, inFace)
 			return
@@ -98,7 +99,7 @@ func (f *FIBModule) add(interest *ndn.Interest, pitToken []byte, inFace uint64) 
 	}
 
 	//table.FibStrategyTable.InsertNextHop(params.Name, faceID, cost)
-
+	mgmtconn.Conn.InsertNextHop(params.Name, faceID, cost)
 	core.LogInfo(f, "Created nexthop for ", params.Name, " to FaceID=", faceID, "with Cost=", cost)
 	responseParams := mgmt.MakeControlParameters()
 	responseParams.Name = params.Name
@@ -147,7 +148,7 @@ func (f *FIBModule) remove(interest *ndn.Interest, pitToken []byte, inFace uint6
 	}
 
 	//table.FibStrategyTable.RemoveNextHop(params.Name, faceID)
-
+	mgmtconn.Conn.RemoveNextHop(params.Name, faceID)
 	core.LogInfo(f, "Removed nexthop for ", params.Name, " to FaceID=", faceID)
 	responseParams := mgmt.MakeControlParameters()
 	responseParams.Name = params.Name
@@ -171,29 +172,9 @@ func (f *FIBModule) list(interest *ndn.Interest, pitToken []byte, inFace uint64)
 
 	// Generate new dataset
 	// TODO: For thread safety, we should lock the FIB from writes until we are done
-	entries := table.FibStrategyTable.GetAllFIBEntries()
-	dataset := make([]byte, 0)
-	for _, fsEntry := range entries {
-		fibEntry := mgmt.MakeFibEntry(fsEntry.Name())
-		for _, nexthop := range fsEntry.GetNextHops() {
-			var record mgmt.NextHopRecord
-			record.FaceID = nexthop.Nexthop
-			record.Cost = nexthop.Cost
-			fibEntry.Nexthops = append(fibEntry.Nexthops, record)
-		}
-
-		wire, err := fibEntry.Encode()
-		if err != nil {
-			core.LogError(f, "Cannot encode FibEntry for Name=", fsEntry.Name, ": ", err)
-			continue
-		}
-		encoded, err := wire.Wire()
-		if err != nil {
-			core.LogError(f, "Cannot encode FibEntry for Name=", fsEntry.Name, ": ", err)
-			continue
-		}
-		dataset = append(dataset, encoded...)
-	}
+	// figure out a way to get all fib entries through communication?
+	// need ack comm for this
+	dataset := mgmtconn.AcksConn.GetAllFIBEntries()
 
 	name, _ := ndn.NameFromString(f.manager.localPrefix.String() + "/fib/list")
 	segments := mgmt.MakeStatusDataset(name, f.nextFIBDatasetVersion, dataset)
