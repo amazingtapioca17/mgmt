@@ -8,6 +8,7 @@
 package modules
 
 import (
+	"github.com/amazingtapioca17/mgmt/mgmtconn"
 	"github.com/named-data/YaNFD/core"
 	"github.com/named-data/YaNFD/fw"
 	"github.com/named-data/YaNFD/ndn"
@@ -139,8 +140,8 @@ func (s *StrategyChoiceModule) set(interest *ndn.Interest, pitToken []byte, inFa
 		params.Strategy.Append(ndn.NewVersionNameComponent(strategyVersion))
 	}
 
-	table.FibStrategyTable.SetStrategy(params.Name, params.Strategy)
-
+	//table.FibStrategyTable.SetStrategy(params.Name, params.Strategy)
+	mgmtconn.Conn.SetStrategy(params.Name, params.Strategy)
 	core.LogInfo(s, "Set strategy for Name=", params.Name, " to Strategy=", params.Strategy)
 	responseParams := mgmt.MakeControlParameters()
 	responseParams.Name = params.Name
@@ -187,8 +188,8 @@ func (s *StrategyChoiceModule) unset(interest *ndn.Interest, pitToken []byte, in
 		return
 	}
 
-	table.FibStrategyTable.UnsetStrategy(params.Name)
-
+	//table.FibStrategyTable.UnsetStrategy(params.Name)
+	mgmtconn.Conn.UnsetStrategy(params.Name)
 	core.LogInfo(s, "Unset Strategy for Name=", params.Name)
 	responseParams := mgmt.MakeControlParameters()
 	responseParams.Name = params.Name

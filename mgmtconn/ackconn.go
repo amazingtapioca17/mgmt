@@ -1,7 +1,7 @@
 package mgmtconn
 
 import (
-	"bytes"
+	"encoding/json"
 	"fmt"
 	"net"
 
@@ -31,30 +31,101 @@ func (a *AckConn) Conn() net.Conn {
 }
 
 func (a *AckConn) GetAllFIBEntries() []byte {
-	a.unix.Write([]byte("list"))
+	var commands = []string{"list"}
+	b, err := json.Marshal(commands)
+	if err != nil {
+		fmt.Println("error:", err)
+	}
+	_, err = a.unix.Write([]byte(b))
+	if err != nil {
+		fmt.Println("Write data failed:", err.Error())
+	}
 	received := make([]byte, 8800)
-	_, err := a.unix.Read(received)
+	_, err = a.unix.Read(received)
 	if err != nil {
 		return []byte("")
 	}
-	return bytes.Trim(received, "\x00")
+	msg := a.ParseResponse(received)
+	return msg.Dataset
 }
 func (a *AckConn) ForwarderStatus() []byte {
-	a.unix.Write([]byte("forwarderstatus"))
+	var commands = []string{"forwarderstatus"}
+	b, err := json.Marshal(commands)
+	if err != nil {
+		fmt.Println("error:", err)
+	}
+	_, err = a.unix.Write([]byte(b))
+	if err != nil {
+		fmt.Println("Write data failed:", err.Error())
+	}
 	received := make([]byte, 8800)
-	_, err := a.unix.Read(received)
+	_, err = a.unix.Read(received)
 	if err != nil {
 		return []byte("")
 	}
-	return bytes.Trim(received, "\x00")
+	msg := a.ParseResponse(received)
+	return msg.Dataset
+}
+
+func (a *AckConn) Versions(version string) ([]uint64, bool) {
+	var commands = []string{"versions", version}
+	b, err := json.Marshal(commands)
+	if err != nil {
+		fmt.Println("error:", err)
+	}
+	_, err = a.unix.Write([]byte(b))
+	if err != nil {
+		fmt.Println("Write data failed:", err.Error())
+	}
+	received := make([]byte, 8800)
+	_, err = a.unix.Read(received)
+	if err != nil {
+		return []uint64{}, false
+	}
+	msg := a.ParseResponse(received)
+	return msg.Versions, msg.Valid
+}
+
+func (a *AckConn) ListStrategy() []byte {
+	var commands = []string{"liststrategy"}
+	b, err := json.Marshal(commands)
+	if err != nil {
+		fmt.Println("error:", err)
+	}
+	_, err = a.unix.Write([]byte(b))
+	if err != nil {
+		fmt.Println("Write data failed:", err.Error())
+	}
+	received := make([]byte, 8800)
+	_, err = a.unix.Read(received)
+	msg := a.ParseResponse(received)
+	return msg.Dataset
 }
 
 func (a *AckConn) GetFaceId(faceID uint64) bool {
-	a.unix.Write([]byte(fmt.Sprintf("faceid,%d", faceID)))
+	var commands = []string{"faceid", fmt.Sprintf("%d", faceID)}
+	b, err := json.Marshal(commands)
+	if err != nil {
+		fmt.Println("error:", err)
+	}
+	_, err = a.unix.Write([]byte(b))
+	if err != nil {
+		fmt.Println("Write data failed:", err.Error())
+	}
 	received := make([]byte, 8800)
-	_, err := a.unix.Read(received)
+	_, err = a.unix.Read(received)
 	if err != nil {
 		return false
 	}
-	return string(received) == "ack"
+	msg := a.ParseResponse(received)
+	return msg.Valid
+}
+
+func (a *AckConn) ParseResponse(received []byte) Message {
+	var msg Message
+	err := json.Unmarshal(received, &msg)
+	if err != nil {
+		fmt.Println("error:", err)
+	}
+	return msg
 }
