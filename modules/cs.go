@@ -91,7 +91,7 @@ func (c *ContentStoreModule) config(interest *ndn.Interest, pitToken []byte, inF
 		core.LogInfo(c, "Setting CS capacity to ", *params.Capacity)
 		//easy fix just send mgmtconn.Conn.SetCapacity or smth
 		//table.SetCsCapacity(int(*params.Capacity))
-		mgmtconn.Conn.SetCapacity(int(*params.Capacity))
+		mgmtconn.AcksConn.SetCapacity(int(*params.Capacity))
 	}
 
 	/*if params.Flags != nil {
@@ -132,6 +132,7 @@ func (c *ContentStoreModule) info(interest *ndn.Interest, pitToken []byte, inFac
 	status := mgmt.CsStatus{
 		Flags: mgmt.CsFlagEnableAdmit | mgmt.CsFlagEnableServe,
 	}
+	//send to forwarder
 	for threadID := 0; threadID < fw.NumFwThreads; threadID++ {
 		thread := dispatch.GetFWThread(threadID)
 		status.NCsEntries += uint64(thread.GetNumCsEntries())

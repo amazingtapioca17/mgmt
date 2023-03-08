@@ -113,7 +113,7 @@ func (r *RibEntry) pruneIfEmpty() {
 
 func (r *RibEntry) updateNexthops() {
 	//FibStrategyTable.ClearNextHops(r.Name)
-	mgmtconn.Conn.ClearNextHops(r.Name)
+	mgmtconn.AcksConn.ClearNextHops(r.Name)
 	// Find minimum cost route per nexthop
 	minCostRoutes := make(map[uint64]uint64) // FaceID -> Cost
 	for _, route := range r.routes {
@@ -126,7 +126,7 @@ func (r *RibEntry) updateNexthops() {
 	//Add "flattened" set of nexthops
 	for nexthop, cost := range minCostRoutes {
 		//fmt.Println(r.Name, nexthop, cost)
-		mgmtconn.Conn.InsertNextHop(r.Name, nexthop, cost)
+		mgmtconn.AcksConn.InsertNextHop(r.Name, nexthop, cost)
 	}
 }
 

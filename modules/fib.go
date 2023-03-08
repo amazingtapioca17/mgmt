@@ -99,7 +99,7 @@ func (f *FIBModule) add(interest *ndn.Interest, pitToken []byte, inFace uint64) 
 	}
 
 	//table.FibStrategyTable.InsertNextHop(params.Name, faceID, cost)
-	mgmtconn.Conn.InsertNextHop(params.Name, faceID, cost)
+	mgmtconn.AcksConn.InsertNextHop(params.Name, faceID, cost)
 	core.LogInfo(f, "Created nexthop for ", params.Name, " to FaceID=", faceID, "with Cost=", cost)
 	responseParams := mgmt.MakeControlParameters()
 	responseParams.Name = params.Name
@@ -148,7 +148,7 @@ func (f *FIBModule) remove(interest *ndn.Interest, pitToken []byte, inFace uint6
 	}
 
 	//table.FibStrategyTable.RemoveNextHop(params.Name, faceID)
-	mgmtconn.Conn.RemoveNextHop(params.Name, faceID)
+	mgmtconn.AcksConn.RemoveNextHop(params.Name, faceID)
 	core.LogInfo(f, "Removed nexthop for ", params.Name, " to FaceID=", faceID)
 	responseParams := mgmt.MakeControlParameters()
 	responseParams.Name = params.Name

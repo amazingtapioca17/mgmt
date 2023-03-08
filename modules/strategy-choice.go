@@ -141,7 +141,7 @@ func (s *StrategyChoiceModule) set(interest *ndn.Interest, pitToken []byte, inFa
 	}
 
 	//table.FibStrategyTable.SetStrategy(params.Name, params.Strategy)
-	mgmtconn.Conn.SetStrategy(params.Name, params.Strategy)
+	mgmtconn.AcksConn.SetStrategy(params.Name, params.Strategy)
 	core.LogInfo(s, "Set strategy for Name=", params.Name, " to Strategy=", params.Strategy)
 	responseParams := mgmt.MakeControlParameters()
 	responseParams.Name = params.Name
@@ -189,7 +189,7 @@ func (s *StrategyChoiceModule) unset(interest *ndn.Interest, pitToken []byte, in
 	}
 
 	//table.FibStrategyTable.UnsetStrategy(params.Name)
-	mgmtconn.Conn.UnsetStrategy(params.Name)
+	mgmtconn.AcksConn.UnsetStrategy(params.Name)
 	core.LogInfo(s, "Unset Strategy for Name=", params.Name)
 	responseParams := mgmt.MakeControlParameters()
 	responseParams.Name = params.Name
