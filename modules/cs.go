@@ -10,8 +10,6 @@ package modules
 import (
 	"github.com/amazingtapioca17/mgmt/mgmtconn"
 	"github.com/named-data/YaNFD/core"
-	"github.com/named-data/YaNFD/dispatch"
-	"github.com/named-data/YaNFD/fw"
 	"github.com/named-data/YaNFD/ndn"
 	"github.com/named-data/YaNFD/ndn/mgmt"
 )
@@ -129,22 +127,7 @@ func (c *ContentStoreModule) info(interest *ndn.Interest, pitToken []byte, inFac
 	}
 
 	// Generate new dataset
-	status := mgmt.CsStatus{
-		Flags: mgmt.CsFlagEnableAdmit | mgmt.CsFlagEnableServe,
-	}
-	//send to forwarder
-	for threadID := 0; threadID < fw.NumFwThreads; threadID++ {
-		thread := dispatch.GetFWThread(threadID)
-		status.NCsEntries += uint64(thread.GetNumCsEntries())
-	}
-	// TODO fill other fields
-
-	wire, err := status.Encode()
-	if err != nil {
-		core.LogError(c, "Cannot encode CsStatus dataset: ", err)
-		return
-	}
-	dataset, _ := wire.Wire()
+	dataset := mgmtconn.AcksConn.CsInfo()
 
 	name, _ := ndn.NameFromString(c.manager.localPrefix.String() + "/cs/info")
 	segments := mgmt.MakeStatusDataset(name, c.nextDatasetVersion, dataset)

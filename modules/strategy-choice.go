@@ -10,11 +10,9 @@ package modules
 import (
 	"github.com/amazingtapioca17/mgmt/mgmtconn"
 	"github.com/named-data/YaNFD/core"
-	"github.com/named-data/YaNFD/fw"
 	"github.com/named-data/YaNFD/ndn"
 	"github.com/named-data/YaNFD/ndn/mgmt"
 	"github.com/named-data/YaNFD/ndn/tlv"
-	"github.com/named-data/YaNFD/table"
 )
 
 // StrategyChoiceModule is the module that handles Strategy Choice Management.
@@ -101,7 +99,7 @@ func (s *StrategyChoiceModule) set(interest *ndn.Interest, pitToken []byte, inFa
 	}
 
 	strategyName := params.Strategy.At(s.strategyPrefix.Size()).String()
-	availableVersions, ok := fw.StrategyVersions[strategyName]
+	availableVersions, ok := mgmtconn.AcksConn.Versions(strategyName)
 	if !ok {
 		core.LogWarn(s, "Unknown Strategy=", params.Strategy, " in ControlParameters for Interest=", interest.Name())
 		response = mgmt.MakeControlResponse(404, "Unknown strategy", nil)
@@ -212,26 +210,7 @@ func (s *StrategyChoiceModule) list(interest *ndn.Interest, pitToken []byte, inF
 	// Generate new dataset
 	// TODO: For thread safety, we should lock the Strategy table from writes until we are done
 	// another area where we have to request forwarder data
-	entries := table.FibStrategyTable.GetAllForwardingStrategies()
-	dataset := make([]byte, 0)
-	strategyChoiceList := mgmt.MakeStrategyChoiceList()
-	for _, fsEntry := range entries {
-		strategyChoiceList = append(strategyChoiceList, mgmt.MakeStrategyChoice(fsEntry.Name(), fsEntry.GetStrategy()))
-	}
-
-	wires, err := strategyChoiceList.Encode()
-	if err != nil {
-		core.LogError(s, "Cannot encode list of strategy choices: ", err)
-		return
-	}
-	for _, strategyChoice := range wires {
-		encoded, err := strategyChoice.Wire()
-		if err != nil {
-			core.LogError(s, "Cannot encode strategy choice entry: ", err)
-			continue
-		}
-		dataset = append(dataset, encoded...)
-	}
+	dataset := mgmtconn.AcksConn.ListStrategy()
 
 	name, _ := ndn.NameFromString(s.manager.localPrefix.String() + "/strategy-choice/list")
 	segments := mgmt.MakeStatusDataset(name, s.nextStrategyDatasetVersion, dataset)

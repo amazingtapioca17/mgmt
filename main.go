@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/amazingtapioca17/mgmt/mgmtconn"
 	"github.com/amazingtapioca17/mgmt/modules"
 
@@ -17,13 +19,22 @@ func main() {
 	//go mgmtConn()
 	// mgmtconn.Conn.Port = ":1080"
 	// mgmtconn.Conn.Socket = "/tmp/fib.sock"
-
+	go input1()
 	mgmtconn.AcksConn.MakeMgmtConn("/tmp/ackmgmt.sock")
 	mgmtconn.AcksConn.Table = &customrib.Rib
 	go mgmtconn.AcksConn.RunReceive()
 
 	manager := modules.MakeMgmtThread()
 	manager.Run()
+
+}
+
+func input1() {
+	var i string
+	fmt.Scan(&i)
+	//test, _ := ndn.NameFromString("/ppp/poem")
+	//mgmtconn.AcksConn.RemoveNextHop(test, 4)
+	fmt.Println(mgmtconn.AcksConn.ForwarderStatus())
 }
 
 func reassemble(frame *lpv2.Packet, baseSequence uint64, fragIndex uint64, fragCount uint64) []byte {

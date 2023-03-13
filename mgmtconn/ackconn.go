@@ -7,6 +7,7 @@ import (
 
 	"github.com/amazingtapioca17/mgmt/ribinterface"
 	"github.com/named-data/YaNFD/ndn"
+	"github.com/named-data/YaNFD/ndn/mgmt"
 )
 
 type AckConn struct {
@@ -17,16 +18,22 @@ type AckConn struct {
 	queue  chan chan Message
 }
 type Message struct {
-	Command   string   `json:"command"`
-	Name      string   `json:"name"`
-	ParamName string   `json:"paramname"`
-	FaceID    uint64   `json:"faceid"`
-	Cost      uint64   `json:"cost"`
-	Strategy  string   `json:"strategy"`
-	Capacity  int      `json:"capacity"`
-	Versions  []uint64 `json:"versions"`
-	Dataset   []byte   `json:"dataset"`
-	Valid     bool     `json:"valid"`
+	Command         string                 `json:"command"`
+	Name            string                 `json:"name"`
+	ParamName       string                 `json:"paramname"`
+	FaceID          uint64                 `json:"faceid"`
+	Cost            uint64                 `json:"cost"`
+	Strategy        string                 `json:"strategy"`
+	Capacity        int                    `json:"capacity"`
+	Versions        []uint64               `json:"versions"`
+	Dataset         []byte                 `json:"dataset"`
+	Valid           bool                   `json:"valid"`
+	ControlParams   mgmt.ControlParameters `json:"controlparams"`
+	ControlResponse mgmt.ControlResponse   `json:"controlresponse"`
+	ErrorCode       int                    `json:"errorcode"`
+	ErrorMessage    string                 `json:"errormessage"`
+	ParamsValid     bool                   `json:"paramsvalid"`
+	FaceQueryFilter mgmt.FaceQueryFilter   `json:"facequeryfilter"`
 }
 
 var AcksConn AckConn
@@ -81,6 +88,64 @@ func (a *AckConn) ForwarderStatus() []byte {
 	return msg.Dataset
 }
 
+func (a *AckConn) Channels() []byte {
+	command := Message{
+		Command: "channels",
+	}
+	msg := a.SendCommand(command)
+	return msg.Dataset
+}
+
+func (a *AckConn) ListFace() []byte {
+	command := Message{
+		Command: "listface",
+	}
+	msg := a.SendCommand(command)
+	return msg.Dataset
+}
+func (a *AckConn) CreateFace(params mgmt.ControlParameters) mgmt.ControlResponse {
+	command := Message{
+		Command:       "createface",
+		ControlParams: params,
+	}
+	msg := a.SendCommand(command)
+	return msg.ControlResponse
+}
+func (a *AckConn) UpdateFace(params mgmt.ControlParameters, faceID uint64) mgmt.ControlResponse {
+	command := Message{
+		Command:       "updateface",
+		ControlParams: params,
+		FaceID:        faceID,
+	}
+	msg := a.SendCommand(command)
+	return msg.ControlResponse
+}
+func (a *AckConn) DestroyFace(faceID uint64) bool {
+	command := Message{
+		Command: "destroyface",
+		FaceID:  faceID,
+	}
+	msg := a.SendCommand(command)
+	return msg.Valid
+}
+
+func (a *AckConn) Query(filter mgmt.FaceQueryFilter) []byte {
+	command := Message{
+		Command:         "query",
+		FaceQueryFilter: filter,
+	}
+	msg := a.SendCommand(command)
+	return msg.Dataset
+}
+
+func (a *AckConn) CsInfo() []byte {
+	command := Message{
+		Command: "info",
+	}
+	msg := a.SendCommand(command)
+	return msg.Dataset
+}
+
 func (a *AckConn) Versions(strategy string) ([]uint64, bool) {
 	command := Message{
 		Command:  "versions",
@@ -114,21 +179,6 @@ func (a *AckConn) ParseResponse(received []byte) Message {
 		fmt.Println("error:", err)
 	}
 	return msg
-}
-
-func (a *AckConn) SendCommand(command Message) Message {
-	b, err := json.Marshal(command)
-	if err != nil {
-		fmt.Println("error:", err)
-	}
-	_, err = a.unix.Write(b)
-	if err != nil {
-		fmt.Println("Write data failed:", err.Error())
-	}
-	response := make(chan Message)
-	a.queue <- response
-	received := <-response
-	return received
 }
 
 func (a *AckConn) ClearNextHops(name *ndn.Name) {
@@ -183,4 +233,19 @@ func (a *AckConn) SetCapacity(cap int) {
 	}
 	a.SendCommand(msg)
 
+}
+
+func (a *AckConn) SendCommand(command Message) Message {
+	b, err := json.Marshal(command)
+	if err != nil {
+		fmt.Println("error:", err)
+	}
+	_, err = a.unix.Write(b)
+	if err != nil {
+		fmt.Println("Write data failed:", err.Error())
+	}
+	response := make(chan Message)
+	a.queue <- response
+	received := <-response
+	return received
 }

@@ -95,6 +95,9 @@ func (t *FakeTransport) Receive() (*tlv.Block, []byte, uint64) {
 				core.LogWarn(t, "Unable to decode received block - DROP")
 				continue
 			}
+			fmt.Println(block)
+			fmt.Println(lpPacket.PitToken())
+			fmt.Println(lpPacket.IncomingFaceID())
 			return block, lpPacket.PitToken(), *lpPacket.IncomingFaceID()
 		}
 	}
